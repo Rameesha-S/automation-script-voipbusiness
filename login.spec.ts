@@ -29,7 +29,7 @@ test('Login to VoIPBusiness dashboard', async ({ page, context }) => {
 
   await passwordInput.click();
   await passwordInput.clear();
-  await passwordInput.pressSequentially('Madrid1!!', { delay: 80 });
+  await passwordInput.pressSequentially('******', { delay: 80 });
   await page.waitForTimeout(500);
 
   await page.screenshot({ path: '02-credentials-filled.png' });
