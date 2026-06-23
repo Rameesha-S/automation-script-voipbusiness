@@ -274,6 +274,11 @@ async function clickYesConfirmation(page: Page) {
   console.log('Clicked Yes by fallback coordinate');
 }
 
+function formatElapsedTime(ms: number) {
+  const seconds = ms / 1000;
+  return `${seconds.toFixed(2)}s (${ms}ms)`;
+}
+
 async function ensureLoggedIn(page: Page) {
   await page.goto('https://app.voipbusiness.com', { waitUntil: 'networkidle' });
   await page.waitForTimeout(2000);
@@ -416,6 +421,7 @@ test('Add a new user via Settings', async ({ page }) => {
   await page.screenshot({ path: '04-form-filled.png' });
 
   // ── Step 8: Click black Create user button ────────────────────────────────
+  const createUserClickedAt = Date.now();
   await clickCreateUser(page);
   console.log('✅ Create user clicked');
 
@@ -433,6 +439,9 @@ test('Add a new user via Settings', async ({ page }) => {
   await page.screenshot({ path: '06-attention-popup.png' });
 
   await clickYesConfirmation(page);
+  const yesClickedAt = Date.now();
+  let successPopupAppearedAt: number | undefined;
+  console.log('Started timing user creation after Yes confirmation');
   console.log('✅ Yes clicked');
 
   await page.waitForTimeout(1000);
@@ -440,16 +449,31 @@ test('Add a new user via Settings', async ({ page }) => {
 
   // ── Step 10: Wait for loading ─────────────────────────────────────────────
   console.log('⏳ Waiting for user creation to complete...');
-  await page.waitForTimeout(5000);
-
   // ── Step 11: Success popup — find and click the black button ──────────────
   try {
     await page.waitForSelector('text=/success|created|done|complete/i', {
-      timeout: 15000,
+      timeout: 30000,
     });
+    successPopupAppearedAt = Date.now();
+    console.log('');
+    console.log('========== USER CREATION TIME ==========');
+    console.log(`From Create user click: ${formatElapsedTime(successPopupAppearedAt - createUserClickedAt)}`);
+    console.log(`From Yes confirmation: ${formatElapsedTime(successPopupAppearedAt - yesClickedAt)}`);
+    console.log('========================================');
+    console.log('');
     console.log('✅ Success popup appeared');
   } catch {
     console.log('⚠️ Success popup not detected');
+  }
+
+  if (!successPopupAppearedAt) {
+    const successWaitEndedAt = Date.now();
+    console.log('');
+    console.log('========== USER CREATION TIME ==========');
+    console.log(`Success popup was not detected after: ${formatElapsedTime(successWaitEndedAt - yesClickedAt)}`);
+    console.log(`Total time from Create user click: ${formatElapsedTime(successWaitEndedAt - createUserClickedAt)}`);
+    console.log('========================================');
+    console.log('');
   }
 
   await page.screenshot({ path: '08-success-popup.png' });
